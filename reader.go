@@ -204,6 +204,84 @@ type ISP struct {
 	Organization                 string `maxminddb:"organization"`
 }
 
+// Example
+//{
+//	'city': {
+//		'eid': 'OO4AAE27GVAIBASYOP8GEO',
+//		'name': 'Kent',
+//		'name_localized': ''
+//	},
+//	'company': {'name': ''},
+//	'continent': {'code': 'NA'},
+//	'country': {
+//		'eid': 'TTWGSKZDVNAVNKJ7GJ8GEO',
+//		'iso2': 'US',
+//		'iso3': 'USA',
+//		'name': 'United States',
+//	},
+//	'demographic': {
+//		'households': 0,
+//		'kids': 0,
+//		'men': 0,
+//		'men_18_34': 0,
+//		'men_35_49': 0,
+//		'rank': 0,
+//		'teens': 0,
+//		'women': 0,
+//		'women_18_34': 0,
+//		'women_35_49': 0,
+//	},
+//	'location': {
+//		'latitude': 47.380001068115234,
+//		'longitude': -122.0999984741211,
+//	},
+//	'metro': {
+//		'eid': 'MACIZI3RWJBMTLYKS58GEO',
+//		'name': 'Seattle-Tacoma, WA',
+//		'regions': ['{wa}'],
+//	},
+//	'postal_code': {
+//		'eid': 'RF2WTPAK5NH5HHXPFJ8GEO',
+//		'name': '98042',
+//	},
+//	'region': {
+//		'eid': 'TQJLIPC4IRFTHFNRIK8GEO',
+//		'name': 'Washington',
+//		'name_localized': ''
+//	}
+//}
+
+type AdrollMagellan struct {
+	City struct {
+		EID           string `maxminddb:"eid"`
+		Name          string `maxminddb:"name"`
+		NameLocalized string `maxminddb:"name_localized"`
+	} `maxminddb:"city"`
+	Company struct {
+		Name string `maxminddb:"name"`
+	} `maxminddb:"company"`
+	Continent struct {
+		Code string `maxminddb:"code"`
+	} `maxminddb:"continent"`
+	Country struct {
+		EID      string `maxminddb:"eid"`
+		IsoCode2 string `maxminddb:"iso2"`
+		IsoCode3 string `maxminddb:"iso3"`
+		Name     string `maxminddb:"name"`
+	} `maxminddb:"country"`
+	Location struct {
+		Latitude  float64 `maxminddb:"latitude"`
+		Longitude float64 `maxminddb:"longitude"`
+	} `maxminddb:"location"`
+	// we do not need demographic info
+	// as well as well as metro and postal
+	Region struct {
+		EID           string `maxminddb:"eid"`
+		Name          string `maxminddb:"name"`
+		NameLocalized string `maxminddb:"name_localized"`
+	} `maxminddb:"region"`
+}
+
 type databaseType int
 
 const (
@@ -307,7 +385,7 @@ func getDBType(reader *maxminddb.Reader) (databaseType, error) {
 	case "GeoIP2-ISP",
 		"GeoIP2-Precision-ISP":
 		return isISP | isASN, nil
-  case "AdRoll-Magellan":
+	case "AdRoll-Magellan":
 		return isCity | isCountry | isAdRollMagellan, nil
 	default:
 		return 0, UnknownDatabaseTypeError{reader.Metadata.DatabaseType}
@@ -422,6 +500,16 @@ func (r *Reader) ISP(ipAddress net.IP) (*ISP, error) {
 		return nil, InvalidMethodError{"ISP", r.Metadata().DatabaseType}
 	}
 	var val ISP
+	err := r.mmdbReader.Lookup(ipAddress, &val)
+	return &val, err
+}
+
+// AdrollMagellan
+func (r *Reader) AdrollMagellan(ipAddress net.IP) (*AdrollMagellan, error) {
+	if isISP&r.databaseType == 0 {
+		return nil, InvalidMethodError{"AdrollMagellan", r.Metadata().DatabaseType}
+	}
+	var val AdrollMagellan
 	err := r.mmdbReader.Lookup(ipAddress, &val)
 	return &val, err
 }
