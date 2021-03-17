@@ -506,7 +506,7 @@ func (r *Reader) ISP(ipAddress net.IP) (*ISP, error) {
 
 // AdrollMagellan
 func (r *Reader) AdrollMagellan(ipAddress net.IP) (*AdrollMagellan, error) {
-	if isISP&r.databaseType == 0 {
+	if isAdRollMagellan&r.databaseType == 0 {
 		return nil, InvalidMethodError{"AdrollMagellan", r.Metadata().DatabaseType}
 	}
 	var val AdrollMagellan
